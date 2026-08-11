@@ -643,6 +643,23 @@ textarea{resize:vertical;min-height:55px;}
   </div>
   <div class="fa"><button class="btn bo" onclick="cm('m-svc')">Cancel</button><button class="btn bp" onclick="saveSvc()"><i class="ti ti-check"></i>Save Service Record</button></div>
 </div></div>
+<!-- Repair Completion -->
+<div class="mo" id="m-rep"><div class="md">
+  <div class="mh"><h3>Record Repair Completion</h3><button class="mc2" onclick="cm('m-rep')">✕</button></div>
+  <div id="rep-inf" style="background:var(--bg);border-radius:var(--r);padding:9px;margin-bottom:12px;font-size:12px;"></div>
+  <div class="fg">
+    <div class="fgr"><label>Repair Date</label><input type="date" id="rep-date"></div>
+    <div class="fgr"><label>Fault / Type of Repair</label>
+      <select id="rep-fault"><option>Engine Failure</option><option>Hydraulic Pump Failure</option><option>Brake System Failure</option><option>Transmission Failure</option><option>Electrical Fault</option><option>Suspension / Chassis Damage</option><option>Cooling System Failure</option><option>Accident Damage</option><option>Compactor Mechanism Failure</option><option>Other</option></select>
+    </div>
+    <div class="fgr"><label>Odometer at Repair (km)</label><input type="number" id="rep-odo"></div>
+    <div class="fgr"><label>Garage / Workshop</label><input type="text" id="rep-ctr" placeholder="Garage / workshop name"></div>
+    <div class="fgr"><label>Cost (Rs.)</label><input type="number" id="rep-cost" placeholder="0"></div>
+    <div class="fgr"><label>Completed By / Authorised By</label><input type="text" id="rep-by" readonly></div>
+    <div class="fgr full"><label>Parts Replaced / Works Done</label><textarea id="rep-notes" placeholder="Parts replaced, work carried out..."></textarea></div>
+  </div>
+  <div class="fa"><button class="btn bo" onclick="cm('m-rep')">Cancel</button><button class="btn bp" onclick="saveRep()"><i class="ti ti-check"></i>Save Repair Record</button></div>
+</div></div>
 <!-- Battery Replacement -->
 <div class="mo" id="m-batt"><div class="md">
   <div class="mh"><h3>Record Battery Replacement</h3><button class="mc2" onclick="cm('m-batt')">✕</button></div>
@@ -1107,6 +1124,13 @@ let TYRE_LOG=[
   {id:'TY007',reg:'WP VA-1100',date:'2024-11-01',brand:'Dunlop',spec:'90/90-17',qty:2,cost:6400,done:'Chamari Silva',notes:''},
   {id:'TY008',reg:'WP BA-8801',date:'2024-02-01',brand:'Apollo',spec:'185/65 R15',qty:4,cost:30000,done:'D.O. Nimal Fernando',notes:''},
 ];
+// ═══════════════════════════════════════════════════════════
+// REPAIR LOG (completed repair job records)
+// ═══════════════════════════════════════════════════════════
+let REPAIR_LOG=[
+  {id:'RP001',reg:'PJ - 2651',date:'2025-02-10',fault:'Hydraulic Pump Failure',odo:44500,centre:'Colombo Motors Ltd.',cost:65000,done:'Lasith Gunasekara',notes:'Hydraulic pump replaced, tested under load'},
+  {id:'RP002',reg:'WP HLT-3300',date:'2025-03-18',fault:'Brake System Failure',odo:26500,centre:'DIMO Service Centre',cost:18500,done:'Chamari Silva',notes:'Brake pads and master cylinder replaced'},
+];
 let CU=null,_rrId=null,_vrId=null,_retId2=null,_priSel='';
 // ═══════════════════════════════════════════════════════════
 // UTILS
@@ -1452,7 +1476,7 @@ function bNav(){
     {lbl:'Fleet Registry',items:[
       {id:'drivers',ic:'ti-id-badge',lbl:'Driver Registry',show:isMC||isME||isFMO},
       {id:'vehicles2',ic:'ti-clipboard-list',lbl:'Vehicle Registry',show:isMC||isME||isFMO},
-      {id:'svc',ic:'ti-settings',lbl:'Service Records',show:isMC||isME||isFMO||isSW},
+      {id:'svc',ic:'ti-settings',lbl:'Service & Repair Records',show:isMC||isME||isFMO||isSW},
     ]},
     {lbl:'Reports',items:[
       {id:'monthly',ic:'ti-calendar-stats',lbl:'Monthly Summary'},
@@ -1475,7 +1499,7 @@ function bNav(){
 function rNav(){bNav();}
 function canActOnRepair2(req,u){const next=nextChainRole(req);return u&&u.role===next&&req.status!=='Approved'&&req.status!=='Rejected';}
 function canApproveVR2(req,u){return u&&canApproveVR(req);}
-const PTITLES={dash:'Dashboard',pool:'Vehicle Pool',morn:'Morning Roll-Call',vreqs:'Vehicle Requests',alloc:'Allocation Log',repairs:'Repair Requests',garages:'Registered Garages',fuel:'Fuel Issues Log',fuelver:'Verify Fuel Records',fuels:'Fuel Summary',drivers:'Driver Registry',vehicles2:'Vehicle Registry',svc:'Service Records',monthly:'Monthly Summary',myreqs:'My Repair Requests',myvreqs:'My Vehicle Requests',mytrips:'My Trips / Fuel',vhist:'Vehicle History Report',smslog:'SMS Gateway',officers:'Officer Registry',mypw:'Change Password'};
+const PTITLES={dash:'Dashboard',pool:'Vehicle Pool',morn:'Morning Roll-Call',vreqs:'Vehicle Requests',alloc:'Allocation Log',repairs:'Repair Requests',garages:'Registered Garages',fuel:'Fuel Issues Log',fuelver:'Verify Fuel Records',fuels:'Fuel Summary',drivers:'Driver Registry',vehicles2:'Vehicle Registry',svc:'Service & Repair Records',monthly:'Monthly Summary',myreqs:'My Repair Requests',myvreqs:'My Vehicle Requests',mytrips:'My Trips / Fuel',vhist:'Vehicle History Report',smslog:'SMS Gateway',officers:'Officer Registry',mypw:'Change Password'};
 function showP(id){document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));const ni=document.getElementById('ni-'+id);if(ni)ni.classList.add('on');const titles={...PTITLES,notifs:'Notifications'};document.getElementById('pt').textContent=titles[id]||id;sc('');const fn={dash:rDash,pool:rPool,morn:rMorn,vreqs:rVReqs,alloc:rAlloc,repairs:rRepairs,garages:rGarages,fuel:rFuel,fuelver:rFuelVer,fuels:rFuelS,drivers:rDrivers,vehicles2:rVehicles,svc:rSvc,monthly:rMonthly,myreqs:rMyReqs,myvreqs:rMyVReqs,mytrips:rMyTrips,notifs:rNotifs,vhist:rVHist,smslog:rSMSLog,officers:rOfficers,mypw:rMyPw};if(fn[id])fn[id]();}
 // ═══════════════════════════════════════════════════════════
 // DASHBOARD
@@ -2142,6 +2166,7 @@ function fVeh(){
         ${canAct?`<button class="btn bp bx" title="Edit" onclick="openVehEdit('${v.reg}')"><i class="ti ti-edit"></i></button>
         <button class="btn bo bx" title="Licence" onclick="openLicUpd('${v.reg}')"><i class="ti ti-license"></i></button>
         <button class="btn bc bx" title="Service" onclick="openSvcUpd('${v.reg}')"><i class="ti ti-settings"></i></button>
+        <button class="btn bo bx" title="Repair" onclick="openRepUpd('${v.reg}')"><i class="ti ti-tool"></i></button>
         <button class="btn bb bx" title="Battery" onclick="openBattUpd('${v.reg}')"><i class="ti ti-battery-charging"></i></button>
         <button class="btn bg bx" title="Tyres" onclick="openTyreUpd('${v.reg}')"><i class="ti ti-circle"></i></button>
         ${CU.role===RO.MC?`<button class="btn ${isAsgn?'bd':'ba'} bx" title="${isAsgn?'Unmark Assigned':'Mark as Assigned Vehicle'}" onclick="toggleAssigned('${v.reg}')"><i class="ti ti-${isAsgn?'lock-open':'lock'}"></i></button>`:''}`:''}
@@ -2256,6 +2281,19 @@ function saveSvc(){
   if(window._svcRetTab)scT(window._svcRetTab);else rVehicles();
   window._svcRetTab=null;_updReg=null;
 }
+// ─── REPAIR RECORD ───────────────────────────────────────
+function openRepUpd(reg){_updReg=reg;const v=gV(reg);if(!v)return;const lastRep=REPAIR_LOG.filter(r=>r.reg===reg).sort((a,b)=>b.date.localeCompare(a.date))[0];document.getElementById('rep-inf').innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:7px 10px;font-size:12px"><strong>${reg}</strong> – ${v.make} ${v.model} (${v.cat||v.type})<br>Last repair: <strong>${lastRep?lastRep.date+' – '+lastRep.fault:'—'}</strong> · Current odo: <strong>${fmt(v.odo)} km</strong></div>`;document.getElementById('rep-date').value=TODAY;document.getElementById('rep-odo').value=v.odo||'';document.getElementById('rep-ctr').value='';document.getElementById('rep-cost').value='';document.getElementById('rep-by').value=CU.n+' ('+CU.role+')';document.getElementById('rep-notes').value='';window._repRetTab=null;om('m-rep');}
+function saveRep(){
+  if(!_updReg){const sel=document.getElementById('rep-veh-sel');_updReg=sel?sel.value:'';}
+  const v=gV(_updReg);if(!v){alert('Select a vehicle first.');return;}
+  const odo=parseInt(document.getElementById('rep-odo').value)||0,dt=document.getElementById('rep-date').value||TODAY;
+  const id='RP'+String(REPAIR_LOG.length+1).padStart(3,'0');
+  REPAIR_LOG.push({id,reg:_updReg,date:dt,fault:document.getElementById('rep-fault').value,odo,centre:document.getElementById('rep-ctr').value,cost:parseFloat(document.getElementById('rep-cost').value)||0,done:CU.n,notes:document.getElementById('rep-notes').value});
+  if(v.status==='Repair')v.status='Available';
+  cm('m-rep');toast('Repair recorded for '+_updReg,'ti-tool');
+  if(window._repRetTab)scT(window._repRetTab);else rVehicles();
+  window._repRetTab=null;_updReg=null;
+}
 function openBattUpd(reg){_updReg=reg;const v=gV(reg);if(!v)return;document.getElementById('batt-inf').innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:7px 10px;font-size:12px"><strong>${reg}</strong> – ${v.make} ${v.model}<br>Last battery replaced: <strong>${v.lastBattDt||'—'}</strong> · Current odo: <strong>${fmt(v.odo)} km</strong></div>`;document.getElementById('batt-date').value=TODAY;document.getElementById('batt-odo').value=v.odo||'';document.getElementById('batt-brand').value='';document.getElementById('batt-spec').value='';document.getElementById('batt-cost').value='';document.getElementById('batt-by').value=CU.n;document.getElementById('batt-notes').value='';window._battRetTab=null;om('m-batt');}
 function saveBatt(){
   if(!_updReg){const sel=document.getElementById('batt-veh-sel');_updReg=sel?sel.value:'';}
@@ -2285,7 +2323,7 @@ function saveTyre(){
 // ═══════════════════════════════════════════════════════════
 function rSvc(){
   const canAct=[RO.MC,RO.ME,RO.FMO,RO.SW,RO.SUP].includes(CU.role);
-  sc(tbBar([{id:'sc-svc',lbl:'Service Log'},{id:'sc-batt',lbl:'Battery Log'},{id:'sc-tyre',lbl:'Tyre Log'}],'sc-svc','scT')+'<div id="sc-c"></div>');
+  sc(tbBar([{id:'sc-svc',lbl:'Service Log'},{id:'sc-rep',lbl:'Repair Log'},{id:'sc-batt',lbl:'Battery Log'},{id:'sc-tyre',lbl:'Tyre Log'}],'sc-svc','scT')+'<div id="sc-c"></div>');
   scT('sc-svc');
 }
 function scT(id){
@@ -2293,6 +2331,8 @@ function scT(id){
   const canAct=[RO.MC,RO.ME,RO.FMO,RO.SW,RO.SUP].includes(CU.role);
   if(id==='sc-svc'){
     el.innerHTML=`<div class="sh"><span style="font-size:12px;color:var(--sb)">${SVC_LOG.length} service record(s)</span>${canAct?`<button class="btn bp bs" onclick="openSvcByReg()"><i class="ti ti-plus"></i>Add Service Record</button>`:''}</div><div class="tw"><table><thead><tr><th>ID</th><th>Reg.</th><th>Category</th><th>Date</th><th>Type</th><th>Odo</th><th>Next Due (km)</th><th>Centre</th><th>Cost (Rs.)</th><th>By</th><th>Notes</th></tr></thead><tbody>${SVC_LOG.sort((a,b)=>b.date.localeCompare(a.date)).map(s=>{const v=gV(s.reg);const due=v&&s.nextOdo&&v.odo>=(s.nextOdo-500);return`<tr style="${due?'background:var(--Rb);':''}"><td style="font-size:10.5px">${s.id}</td><td class="vn">${s.reg}</td><td style="font-size:10.5px">${v?(v.cat||v.type):'—'}</td><td>${s.date}</td><td>${s.type}</td><td>${fmt(s.odo)} km</td><td style="font-weight:600;color:${due?'var(--R)':'inherit'}">${fmt(s.nextOdo)} km${due?' ⚠️ OVERDUE':''}</td><td style="font-size:11px">${s.centre}</td><td>Rs.${fmt(s.cost)}</td><td style="font-size:11px">${s.done}</td><td style="font-size:10.5px;color:var(--sb)">${s.notes||'—'}</td></tr>`;}).join('')}</tbody></table></div>`;
+  } else if(id==='sc-rep'){
+    el.innerHTML=`<div class="sh"><span style="font-size:12px;color:var(--sb)">${REPAIR_LOG.length} repair record(s)</span>${canAct?`<button class="btn bp bs" onclick="openRepByReg()"><i class="ti ti-plus"></i>Add Repair Record</button>`:''}</div><div class="tw"><table><thead><tr><th>ID</th><th>Reg.</th><th>Category</th><th>Date</th><th>Fault / Repair</th><th>Odo</th><th>Garage</th><th>Cost (Rs.)</th><th>By</th><th>Notes</th></tr></thead><tbody>${REPAIR_LOG.length===0?'<tr><td colspan="10" style="text-align:center;color:var(--sb);padding:12px">No repair records.</td></tr>':REPAIR_LOG.sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{const v=gV(r.reg);return`<tr><td style="font-size:10.5px">${r.id}</td><td class="vn">${r.reg}</td><td style="font-size:10.5px">${v?(v.cat||v.type):'—'}</td><td>${r.date}</td><td>${r.fault}</td><td>${fmt(r.odo)} km</td><td style="font-size:11px">${r.centre}</td><td>Rs.${fmt(r.cost)}</td><td style="font-size:11px">${r.done}</td><td style="font-size:10.5px;color:var(--sb)">${r.notes||'—'}</td></tr>`;}).join('')}</tbody></table></div>`;
   } else if(id==='sc-batt'){
     el.innerHTML=`<div class="sh"><span style="font-size:12px;color:var(--sb)">${BATT_LOG.length} battery record(s)</span>${canAct?`<button class="btn bp bs" onclick="openBattByReg()"><i class="ti ti-plus"></i>Add Battery Record</button>`:''}</div><div class="tw"><table><thead><tr><th>ID</th><th>Reg.</th><th>Category</th><th>Date</th><th>Brand</th><th>Spec</th><th>Odo</th><th>Cost (Rs.)</th><th>By</th><th>Notes</th></tr></thead><tbody>${BATT_LOG.sort((a,b)=>b.date.localeCompare(a.date)).map(b=>{const v=gV(b.reg);return`<tr><td style="font-size:10.5px">${b.id}</td><td class="vn">${b.reg}</td><td style="font-size:10.5px">${v?(v.cat||v.type):'—'}</td><td>${b.date}</td><td>${b.brand}</td><td style="font-family:monospace;font-size:11px">${b.spec}</td><td>${fmt(b.odo)} km</td><td>Rs.${fmt(b.cost)}</td><td style="font-size:11px">${b.done}</td><td style="font-size:10.5px;color:var(--sb)">${b.notes||'—'}</td></tr>`;}).join('')}</tbody></table></div>`;
   } else {
@@ -2300,6 +2340,7 @@ function scT(id){
   }
 }
 function openSvcByReg(){_updReg=null;_openSvcFor('sc-svc');}
+function openRepByReg(){_updReg=null;_openRepFor('sc-rep');}
 function openBattByReg(){_updReg=null;_openBattFor('sc-batt');}
 function openTyreByReg(){_updReg=null;_openTyreFor('sc-tyre');}
 // ─── Open with vehicle select pre-populated ───────────────
@@ -2324,6 +2365,26 @@ function svcVehChg(){
   document.getElementById('svc-odo').value=v.odo||'';
   document.getElementById('svc-next').value=(v.odo||0)+(v.svcIntervalKm||5000);
   document.getElementById('svc-inf').innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:7px 10px;font-size:12px;margin-bottom:2px"><strong>${reg}</strong> – ${v.make} ${v.model} (${v.cat||v.type})<br>Last service: <strong>${v.lastSvcDate||'—'}</strong> at <strong>${v.lastSvcOdo?fmt(v.lastSvcOdo)+' km':'—'}</strong> · Next due: <strong>${v.nextSvcOdo?fmt(v.nextSvcOdo)+' km':'—'}</strong> · Current odo: <strong>${fmt(v.odo)} km</strong></div><div class="fgr full" id="svc-veh-row"><label>Vehicle</label><select id="svc-veh-sel" onchange="svcVehChg()" style="width:100%"><option value="">-- Select vehicle --</option>${VEHICLES.map(vv=>`<option value="${vv.reg}"${vv.reg===reg?' selected':''}>${vv.reg} – ${vv.make} ${vv.model} (${vv.cat||vv.type})</option>`).join('')}</select></div>`;
+}
+function _openRepFor(retTab){
+  const sel=`<div class="fgr full" id="rep-veh-row"><label>Vehicle</label><select id="rep-veh-sel" onchange="repVehChg()" style="width:100%"><option value="">-- Select vehicle --</option>${VEHICLES.map(v=>`<option value="${v.reg}">${v.reg} – ${v.make} ${v.model} (${v.cat||v.type})</option>`).join('')}</select></div>`;
+  document.getElementById('rep-inf').innerHTML=sel;
+  document.getElementById('rep-date').value=TODAY;
+  document.getElementById('rep-odo').value='';
+  document.getElementById('rep-ctr').value='';
+  document.getElementById('rep-cost').value='';
+  document.getElementById('rep-by').value=CU.n+' ('+CU.role+')';
+  document.getElementById('rep-notes').value='';
+  window._repRetTab=retTab;
+  om('m-rep');
+}
+function repVehChg(){
+  const reg=document.getElementById('rep-veh-sel').value;
+  const v=gV(reg); if(!v)return;
+  _updReg=reg;
+  document.getElementById('rep-odo').value=v.odo||'';
+  const lastRep=REPAIR_LOG.filter(r=>r.reg===reg).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  document.getElementById('rep-inf').innerHTML=`<div style="background:var(--bg);border-radius:var(--r);padding:7px 10px;font-size:12px;margin-bottom:2px"><strong>${reg}</strong> – ${v.make} ${v.model} (${v.cat||v.type})<br>Last repair: <strong>${lastRep?lastRep.date+' – '+lastRep.fault:'—'}</strong> · Current odo: <strong>${fmt(v.odo)} km</strong></div><div class="fgr full" id="rep-veh-row"><label>Vehicle</label><select id="rep-veh-sel" onchange="repVehChg()" style="width:100%"><option value="">-- Select vehicle --</option>${VEHICLES.map(vv=>`<option value="${vv.reg}"${vv.reg===reg?' selected':''}>${vv.reg} – ${vv.make} ${vv.model} (${vv.cat||vv.type})</option>`).join('')}</select></div>`;
 }
 function _openBattFor(retTab){
   const sel=`<div class="fgr full" id="batt-veh-row"><label>Vehicle</label><select id="batt-veh-sel" onchange="battVehChg()" style="width:100%"><option value="">-- Select vehicle --</option>${VEHICLES.map(v=>`<option value="${v.reg}">${v.reg} – ${v.make} ${v.model} (${v.cat||v.type})</option>`).join('')}</select></div>`;
@@ -3207,6 +3268,10 @@ function vhT(id){
         ${(r.status==='Approved'&&(CU.role===RO.ME||CU.role===RO.FMO||CU.role===RO.MC||CU.role===RO.SW))?`<div class="rc-a" style="margin-top:6px"><button class="btn bp bs" onclick="printApprovalOrder('${r.id}')"><i class="ti ti-printer"></i>Print Approval Order</button></div>`:''}
         ${(r.status==='Approved'&&(CU.role===RO.SUP||CU.id===r.by))?`<div class="rc-a" style="margin-top:6px"><button class="btn bc bs" onclick="printFinalReport('${r.id}')"><i class="ti ti-file-certificate"></i>Print Final Report</button></div>`:''}
       </div>`).join('');
+    const reps=REPAIR_LOG.filter(r=>r.reg===reg).sort((a,b)=>b.date.localeCompare(a.date));
+    el.innerHTML+=`<div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--br)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px"><span style="font-size:11.5px;font-weight:600;color:var(--sb);text-transform:uppercase;letter-spacing:.5px">Completed Repair Records</span>${[RO.MC,RO.ME,RO.FMO,RO.SW,RO.SUP].includes(CU.role)?`<button class="btn bp bs" onclick="openRepUpd('${reg}')"><i class="ti ti-plus"></i>Add Repair Record</button>`:''}</div>`
+      +(reps.length===0?'<p style="color:var(--sb);font-size:12.5px">No completed repair records.</p>':`<div class="tw"><table><thead><tr><th>ID</th><th>Date</th><th>Fault / Repair</th><th>Odo</th><th>Garage</th><th>Cost (Rs.)</th><th>By</th><th>Notes</th></tr></thead><tbody>${reps.map(r=>`<tr><td style="font-size:10.5px">${r.id}</td><td>${r.date}</td><td>${r.fault}</td><td>${fmt(r.odo)} km</td><td style="font-size:11px">${r.centre}</td><td>Rs.${fmt(r.cost)}</td><td style="font-size:11px">${r.done}</td><td style="font-size:10.5px;color:var(--sb)">${r.notes||'—'}</td></tr>`).join('')}</tbody></table></div>`)
+      +`</div>`;
   } else if(id==='vh-svc'){
     const svcs=SVC_LOG.filter(s=>s.reg===reg).sort((a,b)=>b.date.localeCompare(a.date));
     el.innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:9px">${[RO.MC,RO.ME,RO.FMO,RO.SW,RO.SUP].includes(CU.role)?`<button class="btn bp bs" onclick="openSvcUpd('${reg}')"><i class="ti ti-plus"></i>Add Service Record</button>`:''}</div>`
